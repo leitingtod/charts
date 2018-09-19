@@ -4,7 +4,7 @@
 # name: value
 
 image:
-  repository: k8s.gcr.io/kubernetes-dashboard-amd64
+  repository: anjia0532/google-containers.kubernetes-dashboard-amd64
   tag: v1.10.0
   pullPolicy: IfNotPresent
 
@@ -25,10 +25,13 @@ labels: {}
 ## Node labels for pod assignment
 ## Ref: https://kubernetes.io/docs/user-guide/node-selection/
 ##
-nodeSelector: {}
+nodeSelector:
+  "node-role.kubernetes.io/master": ""
 
 ## List of node taints to tolerate (requires Kubernetes >= 1.6)
-tolerations: []
+tolerations:
+  - "key": "node-role.kubernetes.io/master"
+    "effect": "NoSchedule"
 #  - key: "key"
 #    operator: "Equal|Exists"
 #    value: "value"
@@ -64,14 +67,14 @@ resources:
 ingress:
   ## If true, Kubernetes Dashboard Ingress will be created.
   ##
-  enabled: false
+  enabled: true
 
   ## Kubernetes Dashboard Ingress annotations
   ##
-  # annotations:
-  #   kubernetes.io/ingress.class: nginx
-  #   nginx.ingress.kubernetes.io/secure-backends: "true"
-  #   kubernetes.io/tls-acme: 'true'
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/secure-backends: "true"
+    kubernetes.io/tls-acme: 'true'
 
   ## Kubernetes Dashboard Ingress path
   ##
@@ -80,16 +83,16 @@ ingress:
   ## Kubernetes Dashboard Ingress hostnames
   ## Must be provided if Ingress is enabled
   ##
-  # hosts:
-  #   - kubernetes-dashboard.domain.com
+  hosts:
+    - kube-dashboard.aysaas.com
 
   ## Kubernetes Dashboard Ingress TLS configuration
   ## Secrets must be manually created in the namespace
   ##
-  # tls:
-  #   - secretName: kubernetes-dashboard-tls
-  #     hosts:
-  #       - kubernetes-dashboard.domain.com
+  tls:
+    - secretName: kube-dashboard-selfsigned-cert
+      hosts:
+        - kube-dashboard.aysaas.com
 
 rbac:
   # Specifies whether RBAC resources should be created
