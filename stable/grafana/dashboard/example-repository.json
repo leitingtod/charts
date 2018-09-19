@@ -1,0 +1,5 @@
+{
+  "official dashboard example": "official dashboard repository",
+  "coreos example": "coreos helm chart prometheus, prometheus-operator",
+  "auto-imported": "bulitin with grafana"
+}
