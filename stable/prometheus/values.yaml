@@ -67,7 +67,7 @@ alertmanager:
   ingress:
     ## If true, alertmanager Ingress will be created
     ##
-    enabled: false
+    enabled: true
 
     ## alertmanager Ingress annotations
     ##
@@ -82,8 +82,8 @@ alertmanager:
     ## alertmanager Ingress hostnames with optional path
     ## Must be provided if Ingress is enabled
     ##
-    hosts: []
-    #   - alertmanager.domain.com
+    hosts:
+      - alertmanager.aysaas.com
     #   - domain.com/alertmanager
 
     ## alertmanager Ingress TLS configuration
@@ -101,7 +101,9 @@ alertmanager:
   ## Node tolerations for alertmanager scheduling to nodes with taints
   ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
   ##
-  tolerations: []
+  tolerations:
+    - "key": "node-role.kubernetes.io/master"
+      "effect": "NoSchedule"
     # - key: "key"
     #   operator: "Equal|Exists"
     #   value: "value"
@@ -110,7 +112,8 @@ alertmanager:
   ## Node labels for alertmanager pod assignment
   ## Ref: https://kubernetes.io/docs/user-guide/node-selection/
   ##
-  nodeSelector: {}
+  nodeSelector:
+    "node-role.kubernetes.io/master": ""
 
   ## Pod affinity
   ##
@@ -158,7 +161,7 @@ alertmanager:
     ##   set, choosing the default provisioner.  (gp2 on AWS, standard on
     ##   GKE, AWS & OpenStack)
     ##
-    # storageClass: "-"
+    storageClass: "aysaas-nfs"
 
     ## Subdirectory of alertmanager data Persistent Volume to mount
     ## Useful if the volume's root directory is not empty
@@ -288,7 +291,9 @@ kubeStateMetrics:
   ## Node tolerations for kube-state-metrics scheduling to nodes with taints
   ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
   ##
-  tolerations: []
+  tolerations:
+    - "key": "node-role.kubernetes.io/master"
+      "effect": "NoSchedule"
     # - key: "key"
     #   operator: "Equal|Exists"
     #   value: "value"
@@ -297,7 +302,8 @@ kubeStateMetrics:
   ## Node labels for kube-state-metrics pod assignment
   ## Ref: https://kubernetes.io/docs/user-guide/node-selection/
   ##
-  nodeSelector: {}
+  nodeSelector:
+    "node-role.kubernetes.io/master": ""
 
   ## Annotations to be added to kube-state-metrics pods
   ##
@@ -519,7 +525,7 @@ server:
   ingress:
     ## If true, Prometheus server Ingress will be created
     ##
-    enabled: false
+    enabled: true
 
     ## Prometheus server Ingress annotations
     ##
@@ -534,8 +540,8 @@ server:
     ## Prometheus server Ingress hostnames with optional path
     ## Must be provided if Ingress is enabled
     ##
-    hosts: []
-    #   - prometheus.domain.com
+    hosts:
+      - prometheus.aysaas.com
     #   - domain.com/prometheus
 
     ## Prometheus server Ingress TLS configuration
@@ -553,7 +559,9 @@ server:
   ## Node tolerations for server scheduling to nodes with taints
   ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
   ##
-  tolerations: []
+  tolerations:
+    - "key": "node-role.kubernetes.io/master"
+      "effect": "NoSchedule"
     # - key: "key"
     #   operator: "Equal|Exists"
     #   value: "value"
@@ -562,7 +570,8 @@ server:
   ## Node labels for Prometheus server pod assignment
   ## Ref: https://kubernetes.io/docs/user-guide/node-selection/
   ##
-  nodeSelector: {}
+  nodeSelector:
+    "node-role.kubernetes.io/master": ""
 
   ## Pod affinity
   ##
@@ -610,7 +619,7 @@ server:
     ##   set, choosing the default provisioner.  (gp2 on AWS, standard on
     ##   GKE, AWS & OpenStack)
     ##
-    # storageClass: "-"
+    storageClass: "aysaas-nfs"
 
     ## Subdirectory of Prometheus server data Persistent Volume to mount
     ## Useful if the volume's root directory is not empty
@@ -689,7 +698,7 @@ pushgateway:
   ingress:
     ## If true, pushgateway Ingress will be created
     ##
-    enabled: false
+    enabled: true
 
     ## pushgateway Ingress annotations
     ##
@@ -700,8 +709,8 @@ pushgateway:
     ## pushgateway Ingress hostnames with optional path
     ## Must be provided if Ingress is enabled
     ##
-    hosts: []
-    #   - pushgateway.domain.com
+    hosts:
+      - pushgateway.aysaas.com
     #   - domain.com/pushgateway
 
     ## pushgateway Ingress TLS configuration
@@ -715,7 +724,9 @@ pushgateway:
   ## Node tolerations for pushgateway scheduling to nodes with taints
   ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
   ##
-  tolerations: []
+  tolerations:
+    - "key": "node-role.kubernetes.io/master"
+      "effect": "NoSchedule"
     # - key: "key"
     #   operator: "Equal|Exists"
     #   value: "value"
@@ -724,7 +735,8 @@ pushgateway:
   ## Node labels for pushgateway pod assignment
   ## Ref: https://kubernetes.io/docs/user-guide/node-selection/
   ##
-  nodeSelector: {}
+  nodeSelector:
+    "node-role.kubernetes.io/master": ""
 
   ## Annotations to be added to pushgateway pods
   ##
@@ -1045,6 +1057,36 @@ serverFiles:
             action: replace
             target_label: kubernetes_pod_name
 
+      # Example scrape config for ingress-nginx
+      # https://kubernetes.github.io/ingress-nginx/user-guide/monitoring/
+      - job_name: 'ingress-nginx-endpoints'
+        kubernetes_sd_configs:
+        - role: pod
+          namespaces:
+            names:
+            - kube-system
+
+        relabel_configs:
+        - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+          action: keep
+          regex: true
+        - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scheme]
+          action: replace
+          target_label: __scheme__
+          regex: (https?)
+        - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+          action: replace
+          target_label: __metrics_path__
+          regex: (.+)
+        - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+          action: replace
+          target_label: __address__
+          regex: ([^:]+)(?::\d+)?;(\d+)
+          replacement: $1:$2
+
+        - source_labels: [__meta_kubernetes_service_name]
+          regex: prometheus-service
+          action: drop
 networkPolicy:
   ## Enable creation of NetworkPolicy resources.
   ##
